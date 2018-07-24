@@ -1,0 +1,131 @@
+version: '3'
+services:
+  ldap:
+    image: osixia/openldap:1.2.1
+    volumes:
+      - /data/conf/ci/ldap/custom.ldif:/container/service/slapd/assets/config/bootstrap/ldif/100-custom.ldif
+    environment:
+      LDAP_ADMIN_PASSWORD: admin
+      LDAP_READONLY_USER: 'true'
+      LDAP_TLS: "false"
+    env_file:
+        - ./config.env
+    command: --copy-service --loglevel debug
+    deploy:
+        placement:
+            constraints: [node.role == manager]
+        mode: replicated
+        replicas: 1
+        restart_policy:
+            condition: on-failure
+
+  ldap-admin:
+    image: osixia/phpldapadmin:0.7.1
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: ldap
+      PHPLDAPADMIN_HTTPS: 'false'
+    deploy:
+        placement:
+            constraints: [node.role == manager]
+        mode: replicated
+        replicas: 1
+        restart_policy:
+            condition: on-failure
+
+  jenkins:
+    image: odavid/my-bloody-jenkins
+    volumes:
+      - '/data/djeg/jenkins:/var/jenkins_home'
+      - '/data/conf/ci/jenkins:/var/jenkins_home/conf'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - './daemon.json:/etc/docker/daemon.json'
+    environment:
+      JAVA_OPTS_MEM: '-Xmx1g'
+      JENKINS_ENV_HOST_IP: '172.17.0.1'
+      JENKINS_ENV_CONFIG_YML_URL: file:///var/jenkins_home/conf
+      JENKINS_ENV_ADMIN_USER: jenkins.admin
+      JENKINS_ENV_CONFIG_YML_URL_POLLING: '1'
+      # Disable hyper provision of slaves - docker plugin strategy is enough
+      JAVA_OPTS_LOAD_STATS_CLOCK: ''
+      # proxy
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
+      no_proxy: ${no_proxy}
+    deploy:
+        placement:
+            constraints: [node.role == manager]
+        mode: replicated
+        replicas: 1
+        restart_policy:
+            condition: on-failure
+
+  jenkins-swarm-slave-go:
+    image: jenkins-swarm-slave-go
+    environment:
+      MASTER: 'http://jenkins:8080'
+      LABELS: 'erlang'
+      PASSWORD: 'SWARM-SLAVE-PASS80'
+      USERNAME: 'jenkins.swarm'
+      FSROOT: '/home/jenkins-slave'
+      EXECUTORS: '2'
+      NAME: 'static-slave-erlang'
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
+      no_proxy: ${no_proxy}
+    deploy:
+        mode: replicated
+        replicas: 1
+        restart_policy:
+            condition: on-failure
+
+  nexus:
+    image: sonatype/nexus3
+    environment:
+        REGISTRY_HTTP_ADDR: 0.0.0.0:5000
+    deploy:
+        placement:
+            constraints: [node.role == manager]
+        mode: replicated
+        replicas: 1
+        restart_policy:
+            condition: on-failure
+
+  once-init:
+    image: once-init
+    env_file:
+        - ./config.env
+    deploy:
+        placement:
+            constraints: [node.role == manager]
+        mode: replicated
+        replicas: 1
+        restart_policy:
+            condition: none
+
+  nginx:
+    image: nginx-env-proxy
+    ports:
+        - 80:80
+        - 443:443
+    volumes:
+        - /data/djeg/ssl/:/etc/nginx/ssl
+    env_file:
+        - ./config.env
+    deploy:
+        mode: replicated
+        replicas: 1
+        restart_policy:
+            condition: on-failure
+        placement:
+            constraints: [node.role == manager]
+
+  nginx-ldap-auth:
+    image: nginx-ldap-auth
+    deploy:
+        mode: replicated
+        replicas: 1
+        restart_policy:
+            condition: on-failure
+        placement:
+            constraints: [node.role == manager]
+
