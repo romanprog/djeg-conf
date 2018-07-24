@@ -54,7 +54,7 @@ cn: Jenkins Admin
 sn: Jenkins
 objectClass: top
 objectClass: inetOrgPerson
-userPassword: jNQJVQNqx4Uw
+userPassword: jNQJVQNqx4UwKSDJH
 mail: jenkins.admin@example.org
 memberOf: cn=nx-admin,ou=groups,{{ LDAP_BASE_DN }}
 memberOf: cn=http-auth,ou=groups,{{ LDAP_BASE_DN }}
@@ -79,22 +79,3 @@ objectClass: inetOrgPerson
 userPassword: 2PYeEqypv7jJ
 mail: james.dean@example.org
 
-dn: uid=voa,ou=users,{{ LDAP_BASE_DN }}
-changetype: add
-uid: voa
-cn: Volodymyr Tsap
-sn: Tsap
-objectClass: top
-objectClass: inetOrgPerson
-userPassword: 2d33ggEqg7tJ
-mail: voa@shalb.com
-
-dn: uid=mike,ou=users,{{ LDAP_BASE_DN }}
-changetype: add
-uid: mike
-cn: Volodymyr Tsap
-sn: Tsap
-objectClass: top
-objectClass: inetOrgPerson
-userPassword: kssue2w9rZk2c
-mail: mike.e.charles@gmail.com
