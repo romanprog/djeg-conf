@@ -1,1 +1,2 @@
+TEST MIGRATION
 # djeg-conf
